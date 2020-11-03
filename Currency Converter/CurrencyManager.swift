@@ -8,6 +8,11 @@
 
 import Foundation
 
+protocol CurrencyManagerDelegate {
+    func didUpdatePrice(_ currencyManager: CurrencyManager, price: String, inputCurrency: String, outputCurrency: String) // by convention include identity of object that calls the delegate method
+    func didFailWithError(_ currencyManager: CurrencyManager, error: Error)
+}
+
 struct CurrencyManager {
     
     let baseURL = "https://rest.coinapi.io/v1/exchangerate"
@@ -15,21 +20,23 @@ struct CurrencyManager {
     
     let currencyArray = ["AUD", "BRL","CAD","CNY","EUR","GBP","HKD","IDR","ILS","INR","JPY","MXN","NOK","NZD","PLN","RON","RUB","SEK","SGD","USD","ZAR"]
     
+    var delegate: CurrencyManagerDelegate?
+    
     func getCurrencyPrice(value: String, from currency1: String, to currency2: String) {
         if let url = URL(string: "\(baseURL)/\(currency1)/\(currency2)?apikey=\(apiKey)") {
             let session = URLSession(configuration: .default)
             let task = session.dataTask(with: url) { (data, response, error) in
                 if error != nil {
-                    print(error!)
+                    self.delegate?.didFailWithError(self, error: error!)
                     return
                 }
                 if let safeData = data {
-                    let dataString = String(data: safeData, encoding: .utf8)
-                    print(value)
-                    print(dataString!)
-                    let result = self.calculateValue(value, dataString!)
-                    print("here")
-                    print(result)
+                    if let rate = self.parseJSON(data: safeData) {
+                        let result = self.calculateValue(value, rate)
+                        if result != nil {
+                            self.delegate?.didUpdatePrice(self, price: result!, inputCurrency: currency1, outputCurrency: currency2)
+                        }
+                    }
                 }
             }
             task.resume()
@@ -39,7 +46,8 @@ struct CurrencyManager {
     func calculateValue(_ value: String, _ price: String) -> String? {
         if let inputValue = Double(value), let currencyPrice = Double(price) {
             let result = inputValue * currencyPrice
-            return String(format: "%0.2d", result)
+            print(String(result))
+            return String(format: "%.2f", result)
         }
         return nil
     }
@@ -51,7 +59,8 @@ struct CurrencyManager {
             let rate = String(decodedData.rate)
             return rate
         } catch {
-            print(error)
+            // raise error
+            self.delegate?.didFailWithError(self, error: error)
             return nil
         }
     }

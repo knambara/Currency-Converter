@@ -21,6 +21,7 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         
         inputTextField.delegate = self
+        currencyManager.delegate = self
     }
     
 }
@@ -58,6 +59,25 @@ extension ViewController: UITextFieldDelegate {
         }
     }
 }
+
+//MARK: - CurrencyManagerdDelegate
+
+extension ViewController: CurrencyManagerDelegate {
+    func didUpdatePrice(_ currencyManager: CurrencyManager, price: String, inputCurrency: String, outputCurrency: String) {
+        DispatchQueue.main.async {
+            self.inputCurrency.text = inputCurrency
+            self.outputCurrency.text = outputCurrency
+            self.outputLabel.text = price
+        }
+    }
+    
+    func didFailWithError(_ currencyManager: CurrencyManager, error: Error) {
+        //show popup
+    }
+    
+    
+}
+
 
 //MARK: - String extension
 
