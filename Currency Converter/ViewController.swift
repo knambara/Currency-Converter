@@ -15,12 +15,15 @@ class ViewController: UIViewController {
     @IBOutlet weak var outputLabel: UILabel!
     @IBOutlet weak var outputCurrency: UILabel!
     
+    @IBOutlet weak var currencyPicker: UIPickerView!
     var currencyManager = CurrencyManager()
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         inputTextField.delegate = self
+        currencyPicker.dataSource = self
+        currencyPicker.delegate = self
         currencyManager.delegate = self
     }
     
@@ -78,6 +81,46 @@ extension ViewController: CurrencyManagerDelegate {
     
 }
 
+//MARK: - UIPickerViewDelegate, UIDataSource
+
+extension ViewController: UIPickerViewDelegate, UIPickerViewDataSource {
+
+    func numberOfComponents(in pickerView: UIPickerView) -> Int { // how many columns
+        return 2
+    }
+
+    func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
+        return currencyManager.currencyArray.count
+    }
+
+    func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
+        return currencyManager.currencyArray[row]
+    }
+    
+    
+    func pickerView(_ pickerView: UIPickerView, attributedTitleForRow row: Int, forComponent component: Int) -> NSAttributedString? {
+
+        let string = currencyManager.currencyArray[row]
+        return NSAttributedString(string: string, attributes: [NSAttributedString.Key.foregroundColor: UIColor.white])
+    }
+
+    func pickerView(_ pickerView: UIPickerView, didSelectRow row: Int, inComponent component: Int) {
+        let currency = currencyManager.currencyArray[row]
+        if component == 0 {
+            if inputTextField.text != nil && inputTextField.text != "" {
+                currencyManager.getCurrencyPrice(value: inputTextField.text!, from: currency, to: outputCurrency.text!)
+            } else {
+                inputCurrency.text = currency
+            }
+        } else {
+            if inputTextField.text != nil && inputTextField.text != "" {
+                currencyManager.getCurrencyPrice(value: inputTextField.text!, from: inputCurrency.text!, to: currency)
+            } else {
+                outputCurrency.text = currency
+            }
+        }
+    }
+}
 
 //MARK: - String extension
 
